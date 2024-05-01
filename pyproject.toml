@@ -17,6 +17,9 @@ dependencies = [
     'numpy',
     'scipy',
     'matplotlib',
+    'pandas',
+    'tensorflow',
+    'scikit-learn',
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
