@@ -86,7 +86,7 @@ class Emu(object):
 
         self.model.compile(loss=self.loss, optimizer=self.optimizer)
         self.history = self.model.fit(
-            X, y, epochs=self.epochs, batch_size=len(t), callbacks=self.callbacks
+            X, y, epochs=self.epochs, batch_size=len(t), callbacks=self.callbacks,
             verbose=1
         )
         return self
