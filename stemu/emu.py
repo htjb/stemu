@@ -111,9 +111,10 @@ class Emu(object):
             t = self.t
         t = self.t_pipeline.transform(t)
         X = self.X_pipeline.transform(np.atleast_2d(X))
-        X, _ = stack(X, np.atleast_1d(t), 1)
+        X, _ = stack(X, np.atleast_1d(t))
         y = self.model.predict(X)
-        _, _, y = unstack(X, y)
+        print("y shape:", y.shape, X.shape)
+        _, _, y = unstack(X, y, t)
         ty = self.ty_pipeline.inverse_transform(np.block([[t], [y]]))
         _, y = ty[0], ty[1:]
         y = self.y_pipeline.inverse_transform(y)

@@ -1,10 +1,9 @@
 """Utility functions for stemu."""
 
 import numpy as np
-import pandas as pd
 
 
-def stack(X, t, y):
+def stack(X, t, y=None):
     """Stack the data for training.
 
     Parameters
@@ -23,15 +22,15 @@ def stack(X, t, y):
     y : array-like of shape (n_samples*n_target,)
         The dependent variable for the target
     """
-    data = pd.DataFrame(
-        y, columns=t, index=pd.MultiIndex.from_arrays(np.atleast_2d(X).T)
-    ).stack()
-    y = data.to_numpy()
-    X = data.index.to_frame().to_numpy()
+    tiledX = np.tile(X, (len(t), 1))
+    X = np.concatenate([tiledX, 
+                        np.repeat(t, len(X), axis=0).reshape(-1, 1)], axis=1)
+    if y is not None:
+        y = y.flatten()
     return X, y
 
 
-def unstack(X, y):
+def unstack(X, y, t):
     """Unstack the data for prediction.
 
     Parameters
@@ -50,10 +49,7 @@ def unstack(X, y):
     y : array-like of shape (n_samples, n_target)
         The dependent variable for the target
     """
-    data = pd.DataFrame(y, index=pd.MultiIndex.from_arrays(np.atleast_2d(X).T)).unstack(
-        sort=False
-    )
-    y = data.to_numpy()
-    X = data.index.to_frame().to_numpy()
-    t = data.columns.get_level_values(1).to_numpy()
+    y = y.reshape(-1, len(t))
+    X = X[:, :-1]
+    t = X[:, -1]
     return X, t, y
