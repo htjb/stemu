@@ -136,3 +136,39 @@ class IdentityTransformer(BaseEstimator, TransformerMixin):
             The input data.
         """
         return X
+
+class LogTransformer(BaseEstimator, TransformerMixin):
+    """Logarithm transformer."""
+
+    def __init__(self):
+        pass
+
+    def fit(self, X):
+        """Fit the transformer.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input data.
+        """
+        return self
+
+    def transform(self, X):
+        """Transform the data.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input data.
+        """
+        return np.log10(X)
+    
+    def inverse_transform(self, X):
+        """Inverse transform the data.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input data.
+        """
+        return 10**X
