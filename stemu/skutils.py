@@ -140,7 +140,14 @@ class IdentityTransformer(BaseEstimator, TransformerMixin):
 class LogTransformer(BaseEstimator, TransformerMixin):
     """Logarithm transformer."""
 
-    def __init__(self):
+    def __init__(self, index=None):
+        """Initialize the transformer.
+        Parameters
+        ----------
+        index : int or None, optional
+            The index of the column to transform. If None, transform all columns.
+        """
+        self.index = index
         pass
 
     def fit(self, X):
@@ -161,7 +168,8 @@ class LogTransformer(BaseEstimator, TransformerMixin):
         X : array-like of shape (n_samples, n_features)
             The input data.
         """
-        return np.log10(X)
+
+        return np.log10(X[:, self.index]) if self.index is not None else np.log10(X)
     
     def inverse_transform(self, X):
         """Inverse transform the data.
@@ -171,4 +179,4 @@ class LogTransformer(BaseEstimator, TransformerMixin):
         X : array-like of shape (n_samples, n_features)
             The input data.
         """
-        return 10**X
+        return 10**X[:, self.index] if self.index is not None else 10**X
