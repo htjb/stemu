@@ -1,8 +1,8 @@
 name: Build
-on:
-  push:
-    branches:
-      - master
+#on:
+#  push:
+#    branches:
+#      - master
 jobs:
   get-version:
     runs-on: ubuntu-latest
