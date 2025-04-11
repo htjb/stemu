@@ -4,15 +4,8 @@ import numpy as np
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, StandardScaler
 from tensorflow import keras
-
 from stemu.skutils import CDFTransformer, FunctionScaler, IdentityTransformer
 from stemu.utils import stack, unstack
-
-default_network = [
-    keras.layers.Dense(30, activation="relu"),
-    keras.layers.Dense(30, activation="relu"),
-    keras.layers.Dense(30, activation="relu"),
-]
 
 
 class Emu(object):
@@ -33,22 +26,26 @@ class Emu(object):
     X_pipeline : sklearn.pipeline to transform input data X
     t_pipeline : sklearn.pipeline to transform independent variable t
     y_pipeline : sklearn.pipeline to transform dependent variable y
-    ty_pipeline : sklearn.pipeline to transform independent and dependent
-                  variables simultaneously
     """
 
-    def __init__(self, *args, **kwargs):
-        self.epochs = 100
-        self.loss = "mse"
-        self.optimizer = "adam"
+    def __init__(self, **kwargs):
+        self.epochs = kwargs.get("epochs", 100)
+        self.loss = kwargs.get("loss", "mse")
+        self.optimizer = kwargs.get("optimizer", "adam")
         self.callbacks = [keras.callbacks.EarlyStopping(monitor="loss", patience=3)]
 
-        self.X_pipeline = Pipeline([("scaler", StandardScaler())])
-        self.t_pipeline = Pipeline([("cdf", CDFTransformer())])
-        self.y_pipeline = Pipeline([("default", IdentityTransformer())])
-        self.ty_pipeline = Pipeline([("scaler", FunctionScaler())])
+        self.X_pipeline = kwargs.get('Xpipe', 
+                                     Pipeline([("scaler", StandardScaler())]))
+        self.t_pipeline = kwargs.get('tpipe', 
+                                     Pipeline([("cdf", CDFTransformer())]))
+        self.y_pipeline = kwargs.get('ypipe', 
+                            Pipeline([("default", IdentityTransformer())]))
 
-        self.network = default_network
+        self.network = [
+                keras.layers.Dense(30, activation="relu"),
+                keras.layers.Dense(30, activation="relu"),
+                keras.layers.Dense(30, activation="relu"),
+            ]
 
     def fit(self, X, t, y):
         """Fit the emulator.
@@ -73,9 +70,6 @@ class Emu(object):
         y = self.y_pipeline.fit_transform(y)
         t = self.t_pipeline.fit_transform(t, y)
 
-        ty = self.ty_pipeline.fit_transform(np.block([[t], [y]]))
-        t, y = ty[0], ty[1:]
-
         X, y = stack(X, t, y)
 
         self.model = keras.models.Sequential(
@@ -89,7 +83,6 @@ class Emu(object):
             X, y, epochs=self.epochs, batch_size=len(t), callbacks=self.callbacks,
             verbose=1
         )
-        return self
 
     def predict(self, X, t=None):
         """Predict the target.
@@ -113,9 +106,6 @@ class Emu(object):
         X = self.X_pipeline.transform(np.atleast_2d(X))
         X, _ = stack(X, np.atleast_1d(t))
         y = self.model.predict(X)
-        print("y shape:", y.shape, X.shape)
         _, _, y = unstack(X, y, t)
-        ty = self.ty_pipeline.inverse_transform(np.block([[t], [y]]))
-        _, y = ty[0], ty[1:]
         y = self.y_pipeline.inverse_transform(y)
         return y
