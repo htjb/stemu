@@ -34,7 +34,7 @@ class Emu(object):
         self.optimizer = kwargs.get("optimizer", "adam")
         self.callbacks = [keras.callbacks.EarlyStopping(monitor="loss", patience=3)]
 
-        self.X_pipeline = kwargs.get('Xpipe', 
+        self.X_pipeline = kwargs.get('xpipe', 
                                      Pipeline([("scaler", StandardScaler())]))
         self.t_pipeline = kwargs.get('tpipe', 
                                      Pipeline([("cdf", CDFTransformer())]))
@@ -42,9 +42,9 @@ class Emu(object):
                             Pipeline([("default", IdentityTransformer())]))
 
         self.network = [
-                keras.layers.Dense(30, activation="relu"),
-                keras.layers.Dense(30, activation="relu"),
-                keras.layers.Dense(30, activation="relu"),
+                keras.layers.Dense(30, activation="tanh"),
+                keras.layers.Dense(30, activation="tanh"),
+                keras.layers.Dense(30, activation="tanh"),
             ]
 
     def fit(self, X, t, y):
