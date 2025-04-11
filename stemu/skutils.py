@@ -45,7 +45,8 @@ class CDFTransformer(BaseEstimator, TransformerMixin):
         y : array-like of shape (n_samples, n_target)
             The dependent variable for the target
         """
-        cdf = y.std(axis=0).cumsum() / y.std(axis=0).sum()
+        diff = y.max(axis=0) - y.min(axis=0)
+        cdf = diff.cumsum() / diff.sum()
         self.cdf = interp1d(X, cdf)
         self.icdf = interp1d(cdf, X)
         return self
