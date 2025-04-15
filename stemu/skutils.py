@@ -45,6 +45,7 @@ class CDFTransformer(BaseEstimator, TransformerMixin):
         y : array-like of shape (n_samples, n_target)
             The dependent variable for the target
         """
+        X = X.copy()
         diff = y.max(axis=0) - y.min(axis=0)
         cdf = diff.cumsum() / diff.sum()
         self.cdf = interp1d(X, cdf)
@@ -168,8 +169,13 @@ class LogTransformer(BaseEstimator, TransformerMixin):
         X : array-like of shape (n_samples, n_features)
             The input data.
         """
-
-        return np.log10(X[:, self.index]) if self.index is not None else np.log10(X)
+        X = X.copy()
+        
+        if self.index is not None:
+            X[:, self.index] = np.log10(X[:, self.index])
+        else:
+            X = np.log10(X)
+        return X
     
     def inverse_transform(self, X):
         """Inverse transform the data.
@@ -179,4 +185,10 @@ class LogTransformer(BaseEstimator, TransformerMixin):
         X : array-like of shape (n_samples, n_features)
             The input data.
         """
-        return 10**X[:, self.index] if self.index is not None else 10**X
+        X = X.copy()
+        if self.index is not None:
+            X[:, self.index] = 10**X[:, self.index]
+        else:
+            X = 10**X
+
+        return X
