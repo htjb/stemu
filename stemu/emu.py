@@ -32,7 +32,7 @@ class Emu(object):
         self.epochs = kwargs.get("epochs", 100)
         self.loss = kwargs.get("loss", "mse")
         self.optimizer = kwargs.get("optimizer", "adam")
-        self.callbacks = [keras.callbacks.EarlyStopping(monitor="loss", patience=3)]
+        self.callbacks = [keras.callbacks.EarlyStopping(monitor="loss", patience=100)]
 
         self.X_pipeline = kwargs.get('xpipe', 
                                      Pipeline([("scaler", StandardScaler())]))
@@ -42,9 +42,10 @@ class Emu(object):
                             Pipeline([("default", IdentityTransformer())]))
 
         self.network = [
-                keras.layers.Dense(30, activation="tanh"),
-                keras.layers.Dense(30, activation="tanh"),
-                keras.layers.Dense(30, activation="tanh"),
+                keras.layers.Dense(16, activation="tanh"),
+                keras.layers.Dense(16, activation="tanh"),
+                keras.layers.Dense(16, activation="tanh"),
+                keras.layers.Dense(16, activation="tanh"),
             ]
 
     def fit(self, X, t, y):
@@ -73,7 +74,7 @@ class Emu(object):
         X, y = stack(X, t, y)
 
         self.model = keras.models.Sequential(
-            [keras.layers.Input(X.shape[-1:])]
+            [keras.layers.Input(X.shape[-1])]
             + self.network
             + [keras.layers.Dense(1, activation="linear")]
         )
