@@ -67,8 +67,8 @@ class Emu(object):
         self.t = t
 
         X = self.X_pipeline.fit_transform(X)
-        y = self.y_pipeline.fit_transform(y)
         t = self.t_pipeline.fit_transform(t, y)
+        y = self.y_pipeline.fit_transform(y)
 
         X, y = stack(X, t, y)
 
