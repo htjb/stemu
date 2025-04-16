@@ -74,7 +74,7 @@ class Emu(object):
         X, y = stack(X, t, y)
 
         self.model = keras.models.Sequential(
-            [keras.layers.Input(X.shape[-1])]
+            [keras.layers.Input(X.shape[-1:])]
             + self.network
             + [keras.layers.Dense(1, activation="linear")]
         )
