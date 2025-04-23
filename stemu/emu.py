@@ -31,8 +31,9 @@ class Emu(object):
     def __init__(self, **kwargs):
         self.epochs = kwargs.get("epochs", 100)
         self.loss = kwargs.get("loss", "mse")
-        self.optimizer = kwargs.get("optimizer", "adam")
         self.callbacks = [keras.callbacks.EarlyStopping(monitor="loss", patience=100)]
+
+        self.optimizer = keras.optimizers.Adam(learning_rate=0.001)
 
         self.X_pipeline = kwargs.get('xpipe', 
                                      Pipeline([("scaler", StandardScaler())]))
@@ -42,10 +43,9 @@ class Emu(object):
                                      Pipeline(['scale', StandardScaler()]))
 
         self.network = [
-                keras.layers.Dense(32, activation="tanh"),
-                keras.layers.Dense(32, activation="tanh"),
-                keras.layers.Dense(32, activation="tanh"),
-                keras.layers.Dense(32, activation="tanh"),
+                keras.layers.Dense(16, activation="tanh"),
+                keras.layers.Dense(16, activation="tanh"),
+                keras.layers.Dense(16, activation="tanh")
             ]
 
     def fit(self, X, t, y):
@@ -67,14 +67,14 @@ class Emu(object):
         """
         self.t = t.copy()
 
-        X = self.X_pipeline.fit_transform(X)
+        Xprime = self.X_pipeline.fit_transform(X)
         tprime = self.t_pipeline[0].fit_transform(t, y)
         y = np.array([np.interp(tprime, t, yi) for yi in y])
         yprime = self.y_pipeline.fit_transform(y)
 
         tprime = self.t_pipeline[1].fit_transform(t.reshape(-1, 1))
 
-        X, y = stack(X, tprime, yprime)
+        X, y = stack(Xprime, tprime, yprime)
 
         self.model = keras.models.Sequential(
             [keras.layers.Input(X.shape[-1:])]
@@ -85,7 +85,7 @@ class Emu(object):
         self.model.compile(loss=self.loss, optimizer=self.optimizer)
         self.history = self.model.fit(
             X, y, epochs=self.epochs, batch_size=len(t), callbacks=self.callbacks,
-            verbose=1
+            verbose=1, shuffle=True
         )
 
     def predict(self, X, t=None):
@@ -106,12 +106,10 @@ class Emu(object):
         """
         if t is None:
             t = self.t
-        t = self.t_pipeline[0].transform(t)
         tprime = self.t_pipeline[1].transform(t.reshape(-1, 1))
         X = self.X_pipeline.transform(np.atleast_2d(X))
         X, _ = stack(X, np.atleast_1d(tprime))
         ypred = self.model.predict(X)
-        print(t.shape)
         yunstacked = unstack(ypred, t)
         y = self.y_pipeline.inverse_transform(yunstacked)
         return y
