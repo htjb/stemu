@@ -23,14 +23,14 @@ def stack(X, t, y=None):
         The dependent variable for the target
     """
     tiledX = np.tile(X, (len(t), 1))
-    X = np.concatenate([tiledX, 
-                        np.repeat(t, len(X), axis=0).reshape(-1, 1)], axis=1)
+    tiledt = np.tile(t, (len(X), 1))
+    X = np.hstack([tiledX, tiledt])
     if y is not None:
         y = y.flatten()
     return X, y
 
 
-def unstack(X, y, t):
+def unstack(y, t):
     """Unstack the data for prediction.
 
     Parameters
@@ -50,6 +50,4 @@ def unstack(X, y, t):
         The dependent variable for the target
     """
     y = y.reshape(-1, len(t))
-    X = X[:, :-1]
-    t = X[:, -1]
-    return X, t, y
+    return y
