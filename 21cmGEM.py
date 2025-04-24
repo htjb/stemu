@@ -62,7 +62,7 @@ xpipe = Pipeline([('log', LogTransformer(index=[0,1,2])),
 
 emu = Emu(ypipe=ypipe, xpipe=xpipe)
 
-emu.epochs = 50
+emu.epochs = 1
 emu.fit(X_train, z, y_train)
 
 print(emu.history.__dict__)
@@ -82,15 +82,15 @@ plt.title('Histogram of Errors')
 plt.savefig('21cmGEM-histogram.png')
 plt.close()
 
-plt.scatter(y_train.flatten(), emu.predict(X_train).flatten(), alpha=0.5)
+plt.scatter(y_train.flatten(), pred_train.flatten(), alpha=0.5)
 plt.xlabel('True Values')
 plt.ylabel('Predicted Values')
 plt.title('True vs Predicted Values (Train)')
 plt.savefig('21cmGEM-true_vs_predicted_train.png')
 plt.close()
 
-[plt.plot(z, y_test[i], c='k') for i in range(5)]
-[plt.plot(z, emu.predict(X_test)[i], ls=':') for i in range(5)]
+[plt.plot(z, y_test[i], c='C' + str(i)) for i in range(5)]
+[plt.plot(z, pred_test[i], c='C' + str(i), ls=':') for i in range(5)]
 plt.xlabel('z')
 plt.ylabel('Temperature')
 plt.title('Predicted vs True Values (Test)')

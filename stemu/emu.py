@@ -9,24 +9,6 @@ from stemu.utils import stack, unstack
 
 
 class Emu(object):
-    """General Emulation base class.
-
-    This fits an emulator for y=f(t|X) in the style of sklearn models.
-
-    Anything with a default initialisation in the __init__ method is considered
-    a hyperparameter and can be adjusted by the user after initialisation.
-
-    Attributes
-    ----------
-    model : keras model, default is a simple dense network
-    epochs : int, default=100
-    loss : keras loss, default='mse'
-    optimizer : keras optimizer, default='adam'
-    callbacks : list of keras.callbacks
-    X_pipeline : sklearn.pipeline to transform input data X
-    t_pipeline : sklearn.pipeline to transform independent variable t
-    y_pipeline : sklearn.pipeline to transform dependent variable y
-    """
 
     def __init__(self, **kwargs):
         self.epochs = kwargs.get("epochs", 100)
@@ -35,7 +17,7 @@ class Emu(object):
 
         self.optimizer = keras.optimizers.Adam(learning_rate=0.001)
 
-        self.X_pipeline = kwargs.get('xpipe', 
+        self.params_pipeline = kwargs.get('parampipe', 
                                      Pipeline([("scaler", StandardScaler())]))
         self.t_pipeline = [Pipeline([("cdf", CDFTransformer())]), 
                  Pipeline([("minmax", MinMaxScaler())])]
@@ -48,47 +30,32 @@ class Emu(object):
                 keras.layers.Dense(16, activation="tanh")
             ]
 
-    def fit(self, X, t, y):
-        """Fit the emulator.
-
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            The input data.
-        t : array-like of shape (n_target,)
-            The independent variable for the target
-        y : array-like of shape (n_samples, n_target)
-            The dependent variable for the target
-
-        Returns
-        -------
-        self : object
-            Returns self.
-        """
+    def fit(self, params, t, y):
         self.t = t.copy()
 
-        Xprime = self.X_pipeline.fit_transform(X)
-        tprime = self.t_pipeline[0].fit_transform(t, y)
-        y = np.array([np.interp(tprime, t, yi) for yi in y])
-        yprime = self.y_pipeline.fit_transform(y)
+        paramsprime = self.params_pipeline.fit_transform(params)
+        tprime = self.t_pipeline[0].fit_transform(t, y) # cdf
+        y = np.array([np.interp(tprime, t, yi) for yi in y]) # resampling
+        yprime = self.y_pipeline.fit_transform(y) # division by std
 
-        tprime = self.t_pipeline[1].fit_transform(t.reshape(-1, 1))
+        tprime = self.t_pipeline[1].fit_transform(t.reshape(-1, 1)) # minmax
 
-        X, y = stack(Xprime, tprime, yprime)
+        params, y = stack(paramsprime, tprime, yprime)
 
         self.model = keras.models.Sequential(
-            [keras.layers.Input(X.shape[-1:])]
+            [keras.layers.Input(params.shape[-1:])]
             + self.network
             + [keras.layers.Dense(1, activation="linear")]
         )
 
         self.model.compile(loss=self.loss, optimizer=self.optimizer)
         self.history = self.model.fit(
-            X, y, epochs=self.epochs, batch_size=len(t), callbacks=self.callbacks,
+            params, y, epochs=self.epochs, 
+            batch_size=len(t), callbacks=self.callbacks,
             verbose=1, shuffle=True
         )
 
-    def predict(self, X, t=None):
+    def predict(self, params, t=None):
         """Predict the target.
 
         Parameters
@@ -106,10 +73,22 @@ class Emu(object):
         """
         if t is None:
             t = self.t
+        print(t.shape)
         tprime = self.t_pipeline[1].transform(t.reshape(-1, 1))
-        X = self.X_pipeline.transform(np.atleast_2d(X))
-        X, _ = stack(X, np.atleast_1d(tprime))
-        ypred = self.model.predict(X)
+        print(type(tprime))
+        #print(self.t_pipeline[0].__dict__)
+        tprime = np.interp(t, self.t, self.t_pipeline[0].named_steps['cdf'].cdf)
+        print(type(tprime))
+        exit()
+        #print(tprime.shape)
+        params = self.params_pipeline.transform(params)
+        print(params.shape)
+        params, _ = stack(params, tprime)
+        ypred = self.model.predict(params)
+
+        """plt.plot(self.t_pipeline[1].inverse_transform(params[:450, -1].reshape(-1, 1)), ypred[:450], "o", label="pred")
+        plt.show()
+        exit()"""
         yunstacked = unstack(ypred, t)
         y = self.y_pipeline.inverse_transform(yunstacked)
         return y
